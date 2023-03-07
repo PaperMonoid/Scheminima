@@ -16,7 +16,7 @@
 
 (define (objective-1 x) (- (sphere-function x '(0.75 0.25))))
 (define (tweak x) (bounded-uniform-convolution rng x 1.0 0.0 1.0))
-(tabu-search '(0.5 0.5) tweak objective-1 logger 30 5 30)
+(tabu-search '(0.5 0.5) tweak objective-1 logger 30 3 30)
 
 ;; (call-with-output-file "b.txt"
 ;;   (lambda (output-port)

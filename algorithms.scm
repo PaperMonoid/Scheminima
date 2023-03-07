@@ -1,5 +1,6 @@
 (define (norm2 x)
-  (sqrt (map (lambda (xi) (expt xi 2)) x)))
+  (sqrt (apply + (map (lambda (xi) (expt xi 2)) x))))
+
 
 (define (make-rng-uniform seed)
   (let ((a 25214903917)
@@ -15,11 +16,17 @@
 (define (bounded-uniform-convolution rng v p v-min v-max)
   (let* ((P (map (lambda (vi) (rng)) v)))
     (letrec
-	((sample-r
+	((in-range
+	  (lambda (x-min x x-max)
+	    (and (>= x x-min) (<= x x-max))))
+	 (half-range-rng
+	  (lambda ()
+	    (- (rng) 0.5)))
+	 (sample-r
 	  (lambda (vi)
-	    (let* ((n (- (rng) 0.5))
+	    (let* ((n (half-range-rng))
 		   (v* (+ vi n)))
-	      (if (and (<= v* v-max) (>= v* v-min)) v* (sample-r vi))))))
+	      (if (in-range v-min v* v-max) v* (sample-r vi))))))
       (map (lambda (vi pi) (if (>= p pi) (sample-r vi) vi)) v P))))
 
 
@@ -54,30 +61,30 @@
 	  (if (< (objective a) (objective b)) a b)))
        (is-element
 	(lambda (x L epsilon)
-	  (> epsilon
-	     (min (map (lambda (Li) (norm2 (map - x Li))) L)))))
+	  (if (not (null? L))
+	      (> epsilon
+		 (apply min (map (lambda (Li) (norm2 (map - x Li))) L))) #f)))
        (sample-gradient
-	(lambda (iterations R L)
+	(lambda (R L iterations)
 	  (if (> iterations 0)
 	      (let* ((W (tweak S)))
 		(if (and (is-element W L 0.05)
 			 (or (> (objective W) (objective R))
-			     (is-element R  L 0.05)))
-		    (sample-gradient (- iterations 1) W L)))
+			     (is-element R L 0.05)))
+		    (sample-gradient W L (- iterations 1))
+		    R))
 	      R)))
        (optimization-loop
 	(lambda (S Best L iterations)
 	  (if (> iterations 0)
-	      (begin
-		(logger iterations S (objective S))
-		(if (> (length L) l)
-		    (optimization-loop S Best (cdr L) iterations)
-		    (let* ((R (tweak S))
-			   (R* (sample-gradient n R L)))
+	      (if (> (length L) l)
+		  (optimization-loop S Best (cdr L) iterations)
+		  (let* ((R (tweak S))
+			 (R* (sample-gradient R L n)))
+		    (begin
+		      (logger iterations S (objective S))
 		      (if (not (is-element R L 0.05))
-			  (optimization-loop R* (pick-best Best R*) (append R* L) (- iterations 1))
-			  (optimization-loop S (pick-best Best S) (append R L) (- iterations 1))))))
+			  (optimization-loop R* (pick-best Best R*) (append L (list R*)) (- iterations 1))
+			  (optimization-loop S (pick-best Best S) (append L (list R)) (- iterations 1))))))
 	      Best))))
     (optimization-loop S S '() max-iterations)))
-
-;;(bounded-uniform-convolution (make-rng-uniform 0) '(0.5 0.5 0.5) 1 0 1)
