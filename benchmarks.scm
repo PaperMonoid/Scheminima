@@ -65,7 +65,7 @@
 
 (define (opt/buche-rastringin-function x x*)
   (let* ((D (length x))
-	 (Ds (range 1 (+ D 1)))
+	 (Ds (opt/range 1 (+ D 1)))
 	 (s
 	  (map
 	   (lambda (i)
@@ -87,7 +87,7 @@
 
 (define (opt/linear-slope-function x x*)
   (let* ((D (length x))
-	 (I (range 1 (+ D 1)))
+	 (I (opt/range 1 (+ D 1)))
 	 (s (map (lambda (xi* i) (* (opt/sign xi*) (expt 10 (/ (- i 1) (- D 1))))) x I))
 	 (z (map (lambda (xi xi*) (if (< (* xi* xi) (expt 5 2)) xi xi*)) x x*))
 	 (f (lambda (x) (apply + (map (lambda (zi si) (- (* 5 (abs si)) (* si zi))) z s)))))
@@ -96,7 +96,7 @@
 
 (define (opt/different-powers-function x x*)
   (let* ((D (length x))
-	 (I (range 1 (+ D 1)))
+	 (I (opt/range 1 (+ D 1)))
 	 (z (map (lambda (xi xi*) (- xi xi*)) x x*))
 	 (f (lambda (x) (sqrt (apply + (map (lambda (zi) (expt (abs zi) (+ 2 (* 4 (/ (- i 1) (- D 1)))))) z I))))))
     (+ (f z) (f x*))))
