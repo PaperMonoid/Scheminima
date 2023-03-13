@@ -2,11 +2,11 @@
 ;; Utility functions. ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define pi
+(define opt/pi
   (* 4 (atan 1)))
 
 
-(define (range a b)
+(define (opt/range a b)
   (letrec
       ((loop
 	(lambda (l a b)
@@ -17,21 +17,21 @@
       (reverse (loop '() a b)))))
 
 
-(define (sign x)
+(define (opt/sign x)
   (cond
    ((> x 0) 1)
    ((< x 0) -1)
    (else 0)))
 
 
-(define (Toz x)
+(define (opt/Toz x)
   (let* ((x^ (if (not (equal? x 0)) (log (abs x)) 0))
 	 (c1 (if (> x 0) 10 5.5))
 	 (c2 (if (> x 0) 7.9 3.1)))
-    (* (sign x) (exp (+ x^ (* 0.049 (+ (sin (* c1 x^)) (sin (* c2 x^)))))))))
+    (* (opt/sign x) (exp (+ x^ (* 0.049 (+ (sin (* c1 x^)) (sin (* c2 x^)))))))))
 
 
-(define (fpen x)
+(define (opt/fpen x)
   (apply + (map (lambda (xi) (expt (max 0 (- (abs xi) 5)) 2)) x)))
 
 
@@ -39,13 +39,13 @@
 ;; Objetive functions to optimize. ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (sphere-function x x*)
+(define (opt/sphere-function x x*)
   (let* ((z (map (lambda (xi xi*) (- xi xi*)) x x*))
 	 (f (lambda (z) (apply + (map (lambda (zi) (expt zi 2)) z)))))
     (+ (f z) (f x*))))
 
 
-(define (rosenbrock-function x x*)
+(define (opt/rosenbrock-function x x*)
   (let* ((D (length x))
 	 (a (max 1 (/ (sqrt D) 8)))
 	 (Z (lambda (xi) (+ (* a xi) 1)))
@@ -63,7 +63,7 @@
       (+ (f z) (f x*)))))
 
 
-(define (buche-rastringin-function x x*)
+(define (opt/buche-rastringin-function x x*)
   (let* ((D (length x))
 	 (Ds (range 1 (+ D 1)))
 	 (s
@@ -76,25 +76,25 @@
 	 (z
 	  (map
 	   (lambda (si xi xi*)
-	     (* si (Toz (- xi xi*)))) s x x*))
+	     (* si (opt/Toz (- xi xi*)))) s x x*))
 	 (f
 	  (lambda (x)
-	    (+ (* 10 (- D (apply + (map (lambda (zi) (cos (* 2 pi zi))) z))))
+	    (+ (* 10 (- D (apply + (map (lambda (zi) (cos (* 2 opt/pi zi))) z))))
 	       (apply + (map (lambda (zi) (expt zi 2)) z))
-	       (* 100 (fpen x))))))
+	       (* 100 (opt/fpen x))))))
     (+ (f z) (f x*))))
 
 
-(define (linear-slope-function x x*)
+(define (opt/linear-slope-function x x*)
   (let* ((D (length x))
 	 (I (range 1 (+ D 1)))
-	 (s (map (lambda (xi* i) (* (sign xi*) (expt 10 (/ (- i 1) (- D 1))))) x I))
+	 (s (map (lambda (xi* i) (* (opt/sign xi*) (expt 10 (/ (- i 1) (- D 1))))) x I))
 	 (z (map (lambda (xi xi*) (if (< (* xi* xi) (expt 5 2)) xi xi*)) x x*))
 	 (f (lambda (x) (apply + (map (lambda (zi si) (- (* 5 (abs si)) (* si zi))) z s)))))
     (+ (f z) (f x*))))
 
 
-(define (different-powers-function x x*)
+(define (opt/different-powers-function x x*)
   (let* ((D (length x))
 	 (I (range 1 (+ D 1)))
 	 (z (map (lambda (xi xi*) (- xi xi*)) x x*))

@@ -1,8 +1,8 @@
-(define (norm2 x)
+(define (opt/norm2 x)
   (sqrt (apply + (map (lambda (xi) (expt xi 2)) x))))
 
 
-(define (make-rng-uniform seed)
+(define (opt/make-rng-uniform seed)
   (let ((a 25214903917)
 	(c 11)
 	(m (expt 2 48))
@@ -13,7 +13,7 @@
 	(inexact (/ x m))))))
 
 
-(define (bounded-uniform-convolution rng v p v-min v-max)
+(define (opt/bounded-uniform-convolution rng v p v-min v-max)
   (let* ((P (map (lambda (vi) (rng)) v)))
     (letrec
 	((in-range
@@ -30,13 +30,31 @@
       (map (lambda (vi pi) (if (>= p pi) (sample-r vi) vi)) v P))))
 
 
-(define (steepest-ascent-hill-climbing S tweak objective logger max-iterations n)
+(define (opt/solution S quality)
+  (vector S quality))
+
+
+(define (opt/solution->data x)
+  (vector-ref x 0))
+
+
+(define (opt/solution->quality x)
+  (vector-ref x 1))
+
+
+(define (opt/steepest-ascent-hill-climbing S tweak objective logger max-iterations n)
   (letrec
-      ((climb-loop
+      ((candidate
+	(lambda (S)
+	  (opt/solution S (objective S))))
+       (candidate-tweak
+	(lambda (S)
+	  (candidate (tweak (opt/solution->data S)))))
+       (climb-loop
 	(lambda (S R iterations)
 	  (if (> iterations 0)
-	      (let* ((W (tweak S)))
-		(if (> (objective W) (objective R))
+	      (let* ((W (candidate-tweak S)))
+		(if (> (opt/solution->quality W) (opt/solution->quality R))
 		    (climb-loop S W (- iterations 1))
 		    (climb-loop S R (- iterations 1))))
 	      R)))
@@ -44,34 +62,40 @@
 	(lambda (S iterations)
 	  (if (> iterations 0)
 	      (begin
-		(logger iterations S (objective S))
-		(let* ((R (tweak S))
+		(logger iterations S (opt/solution->quality S))
+		(let* ((R (candidate-tweak S))
 		       (R* (climb-loop S R n)))
-		  (if (> (objective R*) (objective S))
+		  (if (> (opt/solution->quality R*) (opt/solution->quality S))
 		      (optimization-loop R* (- iterations 1))
 		      (optimization-loop S (- iterations 1)))))
 	      S))))
-    (optimization-loop S max-iterations)))
+    (optimization-loop (candidate S) max-iterations)))
 
 
-(define (tabu-search S tweak objective logger max-iterations l n)
+(define (opt/tabu-search S tweak objective logger max-iterations l n)
   (letrec
-      ((pick-best
+      ((candidate
+	(lambda (S)
+	  (opt/solution S (objective S))))
+       (candidate-tweak
+	(lambda (S)
+	  (candidate (tweak (opt/solution->data S)))))
+       (pick-best
 	(lambda (a b)
-	  (if (< (objective a) (objective b)) a b)))
+	  (if (< (opt/solution->quality a) (opt/solution->quality b)) a b)))
        (is-element
 	(lambda (x L epsilon)
 	  (if (not (null? L))
 	      (> epsilon
-		 (apply min (map (lambda (Li) (norm2 (map - x Li))) L))) #f)))
+		 (apply min (map (lambda (Li) (opt/norm2 (map - x Li))) L))) #f)))
        (sample-gradient
-	(lambda (R L iterations)
+	(lambda (S R L iterations)
 	  (if (> iterations 0)
-	      (let* ((W (tweak S)))
-		(if (and (is-element W L 0.05)
-			 (or (> (objective W) (objective R))
-			     (is-element R L 0.05)))
-		    (sample-gradient W L (- iterations 1))
+	      (let* ((W (candidate-tweak S)))
+		(if (and (is-element (opt/solution->data W) L 0.05)
+			 (or (> (opt/solution->quality W) (opt/solution->quality R))
+			     (is-element (opt/solution->data R) L 0.05)))
+		    (sample-gradient S W L (- iterations 1))
 		    R))
 	      R)))
        (optimization-loop
@@ -79,12 +103,13 @@
 	  (if (> iterations 0)
 	      (if (> (length L) l)
 		  (optimization-loop S Best (cdr L) iterations)
-		  (let* ((R (tweak S))
-			 (R* (sample-gradient R L n)))
+		  (let* ((R (candidate-tweak S))
+			 (R* (sample-gradient S R L n)))
 		    (begin
-		      (logger iterations S (objective S))
-		      (if (not (is-element R L 0.05))
-			  (optimization-loop R* (pick-best Best R*) (append L (list R*)) (- iterations 1))
-			  (optimization-loop S (pick-best Best S) (append L (list R)) (- iterations 1))))))
+		      (logger iterations S (opt/solution->quality S))
+		      (if (not (is-element (opt/solution->data R) L 0.05))
+			  (optimization-loop R* (pick-best Best R*) (append L (list (opt/solution->data R*))) (- iterations 1))
+			  (optimization-loop S (pick-best Best S) (append L (list (opt/solution->data R))) (- iterations 1))))))
 	      Best))))
-    (optimization-loop S S '() max-iterations)))
+    (let ((S (candidate S)))
+      (optimization-loop S S '() max-iterations))))

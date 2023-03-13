@@ -4,19 +4,19 @@
 (define (logger iteration S quality)
   (display (format "~d\t~s\t~1,4f \n" iteration S quality)))
 
-(define rng (make-rng-uniform 0))
+(define rng (opt/make-rng-uniform 0))
 
-(define (objective-1 x) (- (sphere-function x '(0.75 0.25))))
-(define (tweak x) (bounded-uniform-convolution rng x 1.0 0.0 1.0))
-(steepest-ascent-hill-climbing '(0.5 0.5) tweak objective-1 logger 30 30)
+(define (objective-1 x) (- (opt/sphere-function x '(0.75 0.25))))
+(define (tweak x) (opt/bounded-uniform-convolution rng x 1.0 0.0 1.0))
+(opt/steepest-ascent-hill-climbing '(0.5 0.5) tweak objective-1 logger 30 30)
 
-(define (tweak x) (bounded-uniform-convolution rng x 1.0 -5.0 5.0))
-(define (objective-2 x) (- (linear-slope-function x '(-5 5))))
-(steepest-ascent-hill-climbing '(0.5 0.5) tweak objective-2 logger 30 30)
+(define (tweak x) (opt/bounded-uniform-convolution rng x 1.0 -5.0 5.0))
+(define (objective-2 x) (- (opt/linear-slope-function x '(-5 5))))
+(opt/steepest-ascent-hill-climbing '(0.5 0.5) tweak objective-2 logger 30 30)
 
-(define (objective-1 x) (- (sphere-function x '(0.75 0.25))))
-(define (tweak x) (bounded-uniform-convolution rng x 1.0 0.0 1.0))
-(tabu-search '(0.5 0.5) tweak objective-1 logger 30 3 30)
+(define (objective-1 x) (- (opt/sphere-function x '(0.75 0.25))))
+(define (tweak x) (opt/bounded-uniform-convolution rng x 1.0 0.0 1.0))
+(opt/tabu-search '(0.5 0.5) tweak objective-1 logger 30 3 30)
 
 ;; (call-with-output-file "b.txt"
 ;;   (lambda (output-port)
