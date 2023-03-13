@@ -42,7 +42,7 @@
   (vector-ref x 1))
 
 
-(define (opt/steepest-ascent-hill-climbing S tweak objective logger max-iterations n)
+(define (opt/steepest-ascent-hill-climbing S tweak objective stop-criteria logger max-iterations n)
   (letrec
       ((candidate
 	(lambda (S)
@@ -60,9 +60,9 @@
 	      R)))
        (optimization-loop
 	(lambda (S iterations)
-	  (if (> iterations 0)
+	  (if (and (> iterations 0) (stop-criteria))
 	      (begin
-		(logger iterations S (opt/solution->quality S))
+		(logger iterations (opt/solution->data S) (opt/solution->quality S))
 		(let* ((R (candidate-tweak S))
 		       (R* (climb-loop S R n)))
 		  (if (> (opt/solution->quality R*) (opt/solution->quality S))
@@ -72,7 +72,7 @@
     (optimization-loop (candidate S) max-iterations)))
 
 
-(define (opt/tabu-search S tweak objective logger max-iterations l n)
+(define (opt/tabu-search S tweak objective stop-criteria logger max-iterations l n)
   (letrec
       ((candidate
 	(lambda (S)
@@ -100,7 +100,7 @@
 	      R)))
        (optimization-loop
 	(lambda (S Best L iterations)
-	  (if (> iterations 0)
+	  (if (and (> iterations 0) (stop-criteria))
 	      (if (> (length L) l)
 		  (optimization-loop S Best (cdr L) iterations)
 		  (let* ((R (candidate-tweak S))
