@@ -82,7 +82,7 @@
 	  (candidate (tweak (opt/solution->data S)))))
        (pick-best
 	(lambda (a b)
-	  (if (< (opt/solution->quality a) (opt/solution->quality b)) a b)))
+	  (if (> (opt/solution->quality a) (opt/solution->quality b)) a b)))
        (is-element
 	(lambda (x L epsilon)
 	  (if (not (null? L))
@@ -106,7 +106,7 @@
 		  (let* ((R (candidate-tweak S))
 			 (R* (sample-gradient S R L n)))
 		    (begin
-		      (logger iterations S (opt/solution->quality S))
+		      (logger iterations (opt/solution->data Best) (opt/solution->quality Best))
 		      (if (not (is-element (opt/solution->data R) L 0.05))
 			  (optimization-loop R* (pick-best Best R*) (append L (list (opt/solution->data R*))) (- iterations 1))
 			  (optimization-loop S (pick-best Best S) (append L (list (opt/solution->data R))) (- iterations 1))))))
