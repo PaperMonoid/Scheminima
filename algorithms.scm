@@ -50,13 +50,13 @@
        (candidate-tweak
 	(lambda (S)
 	  (candidate (tweak (opt/solution->data S)))))
-       (climb-loop
+       (sample-gradient-loop
 	(lambda (S R iterations)
 	  (if (> iterations 0)
 	      (let* ((W (candidate-tweak S)))
 		(if (> (opt/solution->quality W) (opt/solution->quality R))
-		    (climb-loop S W (- iterations 1))
-		    (climb-loop S R (- iterations 1))))
+		    (sample-gradient-loop S W (- iterations 1))
+		    (sample-gradient-loop S R (- iterations 1))))
 	      R)))
        (optimization-loop
 	(lambda (S iterations)
@@ -64,7 +64,7 @@
 	      (begin
 		(logger iterations (opt/solution->data S) (opt/solution->quality S))
 		(let* ((R (candidate-tweak S))
-		       (R* (climb-loop S R n)))
+		       (R* (sample-gradient-loop S R n)))
 		  (if (> (opt/solution->quality R*) (opt/solution->quality S))
 		      (optimization-loop R* (- iterations 1))
 		      (optimization-loop S (- iterations 1)))))
@@ -88,14 +88,14 @@
 	  (if (not (null? L))
 	      (> epsilon
 		 (apply min (map (lambda (Li) (opt/norm2 (map - x Li))) L))) #f)))
-       (sample-gradient
+       (sample-gradient-loop
 	(lambda (S R L iterations)
 	  (if (> iterations 0)
 	      (let* ((W (candidate-tweak S)))
 		(if (and (is-element (opt/solution->data W) L 0.05)
 			 (or (> (opt/solution->quality W) (opt/solution->quality R))
 			     (is-element (opt/solution->data R) L 0.05)))
-		    (sample-gradient S W L (- iterations 1))
+		    (sample-gradient-loop S W L (- iterations 1))
 		    R))
 	      R)))
        (optimization-loop
@@ -104,7 +104,7 @@
 	      (if (> (length L) l)
 		  (optimization-loop S Best (cdr L) iterations)
 		  (let* ((R (candidate-tweak S))
-			 (R* (sample-gradient S R L n)))
+			 (R* (sample-gradient-loop S R L n)))
 		    (begin
 		      (logger iterations (opt/solution->data Best) (opt/solution->quality Best))
 		      (if (not (is-element (opt/solution->data R) L 0.05))
@@ -113,3 +113,12 @@
 	      Best))))
     (let ((S (candidate S)))
       (optimization-loop S S '() max-iterations))))
+
+
+;; (define (opt/genetic-algorithm sample fitness population-size)
+;;   (letrec
+;;       ((population
+;; 	(map (lambda () (sample)) (opt/range 0 population-size)))
+;;        (optimization-loop
+;; 	(lambda (population best)
+;; 	  (map fitness population))))))

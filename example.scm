@@ -2,10 +2,6 @@
 (load "algorithms.scm")
 
 
-;;(define (logger iteration count S quality)
-;;  (display (format "~d\t~d\t~s\t~f \n" iteration count S quality)))
-
-
 (define (csv-logger filename)
   (begin
     (delete-file (format "./executions/~a.csv" filename))
@@ -19,7 +15,7 @@
 
 
 (define (random-list s)
-  (map (lambda (_) (rng)) (opt/range 0 s)))
+  (map (lambda (_) (* 10 (- 0.50 (rng)))) (opt/range 0 s)))
 
 
 (define (opt/objective function max-evaluation-count)
@@ -35,7 +31,7 @@
 
 
 (define (tweak x)
-  (opt/bounded-uniform-convolution rng x 1.0 0.0 1.0))
+  (opt/bounded-uniform-convolution rng x 1.0 -5.0 5.0))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -271,7 +267,231 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(let* ((D 2)
+       (F opt/sphere-function)
+       (S* (random-list D))
+       (logger (csv-logger "tabu-search-sphere-n2")))
+  (letrec
+      ((test-loop
+	(lambda (n)
+	  (when (> n 0)
+	    (let* ((objective-function (lambda (x) (- (F x S*))))
+		   (objective (opt/objective objective-function 1000))
+		   (stop-criteria (car objective))
+		   (quality (car (cdr objective)))
+		   (count (car (cdr (cdr objective))))
+		   (log-function
+		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (S (random-list D)))
+	      (begin
+		(display (format "Solving ~d for ~s..." n S*))
+		(opt/tabu-search S tweak quality stop-criteria log-function 30 3 30)
+		(display " Done!")
+		(newline)
+		(test-loop (- n 1))))))))
+    (test-loop 10)))
 
+
+(let* ((D 5)
+       (F opt/sphere-function)
+       (S* (random-list D))
+       (logger (csv-logger "tabu-search-sphere-n5")))
+  (letrec
+      ((test-loop
+	(lambda (n)
+	  (when (> n 0)
+	    (let* ((objective-function (lambda (x) (- (F x S*))))
+		   (objective (opt/objective objective-function 1000))
+		   (stop-criteria (car objective))
+		   (quality (car (cdr objective)))
+		   (count (car (cdr (cdr objective))))
+		   (log-function
+		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (S (random-list D)))
+	      (begin
+		(display (format "Solving ~d for ~s..." n S*))
+		(opt/tabu-search S tweak quality stop-criteria log-function 30 3 30)
+		(display " Done!")
+		(newline)
+		(test-loop (- n 1))))))))
+    (test-loop 10)))
+
+
+(let* ((D 10)
+       (F opt/sphere-function)
+       (S* (random-list D))
+       (logger (csv-logger "tabu-search-sphere-n10")))
+  (letrec
+      ((test-loop
+	(lambda (n)
+	  (when (> n 0)
+	    (let* ((objective-function (lambda (x) (- (F x S*))))
+		   (objective (opt/objective objective-function 1000))
+		   (stop-criteria (car objective))
+		   (quality (car (cdr objective)))
+		   (count (car (cdr (cdr objective))))
+		   (log-function
+		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (S (random-list D)))
+	      (begin
+		(display (format "Solving ~d for ~s..." n S*))
+		(opt/tabu-search S tweak quality stop-criteria log-function 30 3 30)
+		(display " Done!")
+		(newline)
+		(test-loop (- n 1))))))))
+    (test-loop 10)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(let* ((D 2)
+       (F opt/buche-rastringin-function)
+       (S* (random-list D))
+       (logger (csv-logger "tabu-search-buche-rastringin-n2")))
+  (letrec
+      ((test-loop
+	(lambda (n)
+	  (when (> n 0)
+	    (let* ((objective-function (lambda (x) (- (F x S*))))
+		   (objective (opt/objective objective-function 1000))
+		   (stop-criteria (car objective))
+		   (quality (car (cdr objective)))
+		   (count (car (cdr (cdr objective))))
+		   (log-function
+		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (S (random-list D)))
+	      (begin
+		(display (format "Solving ~d for ~s..." n S*))
+		(opt/tabu-search S tweak quality stop-criteria log-function 30 3 30)
+		(display " Done!")
+		(newline)
+		(test-loop (- n 1))))))))
+    (test-loop 10)))
+
+
+(let* ((D 5)
+       (F opt/buche-rastringin-function)
+       (S* (random-list D))
+       (logger (csv-logger "tabu-search-buche-rastringin-n5")))
+  (letrec
+      ((test-loop
+	(lambda (n)
+	  (when (> n 0)
+	    (let* ((objective-function (lambda (x) (- (F x S*))))
+		   (objective (opt/objective objective-function 1000))
+		   (stop-criteria (car objective))
+		   (quality (car (cdr objective)))
+		   (count (car (cdr (cdr objective))))
+		   (log-function
+		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (S (random-list D)))
+	      (begin
+		(display (format "Solving ~d for ~s..." n S*))
+		(opt/tabu-search S tweak quality stop-criteria log-function 30 3 30)
+		(display " Done!")
+		(newline)
+		(test-loop (- n 1))))))))
+    (test-loop 10)))
+
+
+(let* ((D 10)
+       (F opt/buche-rastringin-function)
+       (S* (random-list D))
+       (logger (csv-logger "tabu-search-buche-rastringin-n10")))
+  (letrec
+      ((test-loop
+	(lambda (n)
+	  (when (> n 0)
+	    (let* ((objective-function (lambda (x) (- (F x S*))))
+		   (objective (opt/objective objective-function 1000))
+		   (stop-criteria (car objective))
+		   (quality (car (cdr objective)))
+		   (count (car (cdr (cdr objective))))
+		   (log-function
+		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (S (random-list D)))
+	      (begin
+		(display (format "Solving ~d for ~s..." n S*))
+		(opt/tabu-search S tweak quality stop-criteria log-function 30 3 30)
+		(display " Done!")
+		(newline)
+		(test-loop (- n 1))))))))
+    (test-loop 10)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(let* ((D 2)
+       (F opt/rosenbrock-function)
+       (S* (random-list D))
+       (logger (csv-logger "tabu-search-rosenbrock-n2")))
+  (letrec
+      ((test-loop
+	(lambda (n)
+	  (when (> n 0)
+	    (let* ((objective-function (lambda (x) (- (F x S*))))
+		   (objective (opt/objective objective-function 1000))
+		   (stop-criteria (car objective))
+		   (quality (car (cdr objective)))
+		   (count (car (cdr (cdr objective))))
+		   (log-function
+		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (S (random-list D)))
+	      (begin
+		(display (format "Solving ~d for ~s..." n S*))
+		(opt/tabu-search S tweak quality stop-criteria log-function 30 3 30)
+		(display " Done!")
+		(newline)
+		(test-loop (- n 1))))))))
+    (test-loop 10)))
+
+
+(let* ((D 5)
+       (F opt/rosenbrock-function)
+       (S* (random-list D))
+       (logger (csv-logger "tabu-search-rosenbrock-n5")))
+  (letrec
+      ((test-loop
+	(lambda (n)
+	  (when (> n 0)
+	    (let* ((objective-function (lambda (x) (- (F x S*))))
+		   (objective (opt/objective objective-function 1000))
+		   (stop-criteria (car objective))
+		   (quality (car (cdr objective)))
+		   (count (car (cdr (cdr objective))))
+		   (log-function
+		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (S (random-list D)))
+	      (begin
+		(display (format "Solving ~d for ~s..." n S*))
+		(opt/tabu-search S tweak quality stop-criteria log-function 30 3 30)
+		(display " Done!")
+		(newline)
+		(test-loop (- n 1))))))))
+    (test-loop 10)))
+
+
+(let* ((D 10)
+       (F opt/rosenbrock-function)
+       (S* (random-list D))
+       (logger (csv-logger "tabu-search-rosenbrock-n10")))
+  (letrec
+      ((test-loop
+	(lambda (n)
+	  (when (> n 0)
+	    (let* ((objective-function (lambda (x) (- (F x S*))))
+		   (objective (opt/objective objective-function 1000))
+		   (stop-criteria (car objective))
+		   (quality (car (cdr objective)))
+		   (count (car (cdr (cdr objective))))
+		   (log-function
+		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (S (random-list D)))
+	      (begin
+		(display (format "Solving ~d for ~s..." n S*))
+		(opt/tabu-search S tweak quality stop-criteria log-function 30 3 30)
+		(display " Done!")
+		(newline)
+		(test-loop (- n 1))))))))
+    (test-loop 10)))
 
 
 
