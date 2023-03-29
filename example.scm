@@ -11,11 +11,25 @@
 	(close-port port)))))
 
 
-(define rng (opt/make-rng-uniform 3482))
+(define (log-plane filename)
+  (let ((filepath (format "./planes/~a.csv" filename)))
+    (delete-file filepath)
+    (lambda (data)
+      (let ((port (open-output-file filepath 'append)))
+	(display (apply format  (cons "~s,~s,~s\n" data)) port)
+	(close-port port)))))
+
+
+;; DEFINE RNG
+;;(define rng (opt/make-rng-uniform 3482))
+;;(define rng (opt/make-rng-normal 3482 0 0.33))
+(define rng (opt/make-rng-normal 3482 0 2))
 
 
 (define (random-list s)
-  (map (lambda (_) (* 10 (- 0.50 (rng)))) (opt/range 0 s)))
+  (map (lambda (_) (max (min (rng) 5) -5)) (opt/range 0 s)))
+
+;;(random-list 10)
 
 
 (define (opt/objective function max-evaluation-count)
@@ -34,23 +48,40 @@
   (opt/bounded-uniform-convolution rng x 1.0 -5.0 5.0))
 
 
+(define (evaluate-plane objective logger)
+  (letrec
+      ((loop-y
+	(lambda (x y delta)
+	  (when (<= y 5)
+	    (begin
+	      (logger (list x y (objective (list x y))))
+	      (loop-y x (+ y delta) delta)))))
+       (loop-x
+	(lambda (x delta)
+	  (when (<= x 5)
+	    (begin
+	      (loop-y x -5 delta)
+	      (loop-x (+ x delta) delta))))))
+    (loop-x -5 0.05)))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (let* ((D 2)
        (F opt/sphere-function)
        (S* (random-list D))
-       (logger (csv-logger "steepest-ascent-hill-climbing-sphere-n2")))
+       (objective-function (lambda (x) (- (F x S*))))
+       (logger (csv-logger "steepest-ascent-hill-climbing-sphere-n2"))
+       (plane-logger (log-plane "steepest-ascent-hill-climbing-sphere-n2-plane")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -58,24 +89,25 @@
 		(display " Done!")
 		(newline)
 		(test-loop (- n 1))))))))
-    (test-loop 10)))
+    (begin
+      (test-loop 10)
+      (evaluate-plane objective-function plane-logger))))
 
 
 (let* ((D 5)
        (F opt/sphere-function)
        (S* (random-list D))
+       (objective-function (lambda (x) (- (F x S*))))
        (logger (csv-logger "steepest-ascent-hill-climbing-sphere-n5")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -89,18 +121,17 @@
 (let* ((D 10)
        (F opt/sphere-function)
        (S* (random-list D))
+       (objective-function (lambda (x) (- (F x S*))))
        (logger (csv-logger "steepest-ascent-hill-climbing-sphere-n10")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -115,18 +146,18 @@
 (let* ((D 2)
        (F opt/buche-rastringin-function)
        (S* (random-list D))
-       (logger (csv-logger "steepest-ascent-hill-climbing-buche-rastringin-n2")))
+       (objective-function (lambda (x) (- (F x S*))))
+       (logger (csv-logger "steepest-ascent-hill-climbing-buche-rastringin-n2"))
+       (plane-logger (log-plane "steepest-ascent-hill-climbing-buche-rastringin-n2-plane")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -134,24 +165,25 @@
 		(display " Done!")
 		(newline)
 		(test-loop (- n 1))))))))
-    (test-loop 10)))
+    (begin
+      (test-loop 10)
+      (evaluate-plane objective-function plane-logger))))
 
 
 (let* ((D 5)
        (F opt/buche-rastringin-function)
        (S* (random-list D))
+       (objective-function (lambda (x) (- (F x S*))))
        (logger (csv-logger "steepest-ascent-hill-climbing-buche-rastringin-n5")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -165,18 +197,17 @@
 (let* ((D 10)
        (F opt/buche-rastringin-function)
        (S* (random-list D))
+       (objective-function (lambda (x) (- (F x S*))))
        (logger (csv-logger "steepest-ascent-hill-climbing-buche-rastringin-n10")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -191,18 +222,18 @@
 (let* ((D 2)
        (F opt/rosenbrock-function)
        (S* (random-list D))
-       (logger (csv-logger "steepest-ascent-hill-climbing-rosenbrock-n2")))
+       (objective-function (lambda (x) (- (F x S*))))
+       (logger (csv-logger "steepest-ascent-hill-climbing-rosenbrock-n2"))
+       (plane-logger (log-plane "steepest-ascent-hill-climbing-rosenbrock-n2-plane")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -210,24 +241,25 @@
 		(display " Done!")
 		(newline)
 		(test-loop (- n 1))))))))
-    (test-loop 10)))
+    (begin
+      (test-loop 10)
+      (evaluate-plane objective-function plane-logger))))
 
 
 (let* ((D 5)
        (F opt/rosenbrock-function)
        (S* (random-list D))
+       (objective-function (lambda (x) (- (F x S*))))
        (logger (csv-logger "steepest-ascent-hill-climbing-rosenbrock-n5")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -241,18 +273,17 @@
 (let* ((D 10)
        (F opt/rosenbrock-function)
        (S* (random-list D))
+       (objective-function (lambda (x) (- (F x S*))))
        (logger (csv-logger "steepest-ascent-hill-climbing-rosenbrock-n10")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -270,18 +301,18 @@
 (let* ((D 2)
        (F opt/sphere-function)
        (S* (random-list D))
-       (logger (csv-logger "tabu-search-sphere-n2")))
+       (objective-function (lambda (x) (- (F x S*))))
+       (logger (csv-logger "tabu-search-sphere-n2"))
+       (plane-logger (log-plane "tabu-search-sphere-n2-plane")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -289,24 +320,25 @@
 		(display " Done!")
 		(newline)
 		(test-loop (- n 1))))))))
-    (test-loop 10)))
+    (begin
+      (test-loop 10)
+      (evaluate-plane objective-function plane-logger))))
 
 
 (let* ((D 5)
        (F opt/sphere-function)
        (S* (random-list D))
+       (objective-function (lambda (x) (- (F x S*))))
        (logger (csv-logger "tabu-search-sphere-n5")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -320,18 +352,17 @@
 (let* ((D 10)
        (F opt/sphere-function)
        (S* (random-list D))
+       (objective-function (lambda (x) (- (F x S*))))
        (logger (csv-logger "tabu-search-sphere-n10")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -346,18 +377,18 @@
 (let* ((D 2)
        (F opt/buche-rastringin-function)
        (S* (random-list D))
-       (logger (csv-logger "tabu-search-buche-rastringin-n2")))
+       (objective-function (lambda (x) (- (F x S*))))
+       (logger (csv-logger "tabu-search-buche-rastringin-n2"))
+       (plane-logger (log-plane "tabu-search-buche-rastringin-n2-plane")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -365,24 +396,25 @@
 		(display " Done!")
 		(newline)
 		(test-loop (- n 1))))))))
-    (test-loop 10)))
+    (begin
+      (test-loop 10)
+      (evaluate-plane objective-function plane-logger))))
 
 
 (let* ((D 5)
        (F opt/buche-rastringin-function)
        (S* (random-list D))
+       (objective-function (lambda (x) (- (F x S*))))
        (logger (csv-logger "tabu-search-buche-rastringin-n5")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -396,18 +428,17 @@
 (let* ((D 10)
        (F opt/buche-rastringin-function)
        (S* (random-list D))
+       (objective-function (lambda (x) (- (F x S*))))
        (logger (csv-logger "tabu-search-buche-rastringin-n10")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -422,18 +453,18 @@
 (let* ((D 2)
        (F opt/rosenbrock-function)
        (S* (random-list D))
-       (logger (csv-logger "tabu-search-rosenbrock-n2")))
+       (objective-function (lambda (x) (- (F x S*))))
+       (logger (csv-logger "tabu-search-rosenbrock-n2"))
+       (plane-logger (log-plane "tabu-search-rosenbrock-n2-plane")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -441,24 +472,25 @@
 		(display " Done!")
 		(newline)
 		(test-loop (- n 1))))))))
-    (test-loop 10)))
+    (begin
+      (test-loop 10)
+      (evaluate-plane objective-function plane-logger))))
 
 
 (let* ((D 5)
        (F opt/rosenbrock-function)
        (S* (random-list D))
+       (objective-function (lambda (x) (- (F x S*))))
        (logger (csv-logger "tabu-search-rosenbrock-n5")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -472,18 +504,17 @@
 (let* ((D 10)
        (F opt/rosenbrock-function)
        (S* (random-list D))
+       (objective-function (lambda (x) (- (F x S*))))
        (logger (csv-logger "tabu-search-rosenbrock-n10")))
   (letrec
       ((test-loop
 	(lambda (n)
 	  (when (> n 0)
-	    (let* ((objective-function (lambda (x) (- (F x S*))))
-		   (objective (opt/objective objective-function 1000))
+	    (let* ((objective (opt/objective objective-function 1000))
 		   (stop-criteria (car objective))
 		   (quality (car (cdr objective)))
 		   (count (car (cdr (cdr objective))))
-		   (log-function
-		    (lambda (iteration S quality) (logger n (count) S quality)))
+		   (log-function (lambda (iteration S quality) (logger n (count) S quality)))
 		   (S (random-list D)))
 	      (begin
 		(display (format "Solving ~d for ~s..." n S*))
@@ -492,83 +523,3 @@
 		(newline)
 		(test-loop (- n 1))))))))
     (test-loop 10)))
-
-
-
-
-
-
-
-
-
-
-
-;; (let ((D 2)
-;;       (F opt/rosenbrock-function))
-;;   (letrec
-;;       ((test-loop
-;; 	(lambda (n)
-;; 	  (when (> n 0)
-;; 	    (let* ((S* (random-list D))
-;; 		   (objective-function (lambda (x) (- (F x S*))))
-;; 		   (objective (opt/objective objective-function 1000))
-;; 		   (stop-criteria (car objective))
-;; 		   (quality (car (cdr objective)))
-;; 		   (S (random-list D)))
-;; 	      (begin
-;; 		(display "------------------------------------- ")
-;; 		(display S*)
-;; 		(display " -------------------------------------")
-;; 		(newline)
-;; 		(opt/steepest-ascent-hill-climbing S tweak quality stop-criteria logger 30 30)
-;; 		(test-loop (- n 1))))))))
-;;     (test-loop 10)))
-
-
-;; (let ((D 2)
-;;       (F opt/buche-rastringin-function))
-;;   (letrec
-;;       ((test-loop
-;; 	(lambda (n)
-;; 	  (when (> n 0)
-;; 	    (let* ((S* (random-list D))
-;; 		   (objective-function (lambda (x) (- (F x S*))))
-;; 		   (objective (opt/objective objective-function 1000))
-;; 		   (stop-criteria (car objective))
-;; 		   (quality (car (cdr objective)))
-;; 		   (S (random-list D)))
-;; 	      (begin
-;; 		(display "------------------------------------- ")
-;; 		(display S*)
-;; 		(display " -------------------------------------")
-;; 		(newline)
-;; 		(opt/steepest-ascent-hill-climbing S tweak quality stop-criteria logger 30 30)
-;; 		(test-loop (- n 1))))))))
-;;     (test-loop 10)))
-
-
-;; (define (tweak x) (opt/bounded-uniform-convolution rng x 1.0 -5.0 5.0))
-;; (define (objective-2 x) (- (opt/linear-slope-function x '(-5 5))))
-;; (opt/steepest-ascent-hill-climbing '(0.5 0.5) tweak objective-2 logger 30 30)
-
-
-;; (define (objective-1 x) (- (opt/sphere-function x '(0.75 0.25))))
-;; (define (tweak x) (opt/bounded-uniform-convolution rng x 1.0 0.0 1.0))
-;; (opt/tabu-search '(0.5 0.5) tweak objective-1 logger 30 3 30)
-
-;; (call-with-output-file "b.txt"
-;;   (lambda (output-port)
-;;     (display "hello, world" output-port)))
-
-;; (letrec
-;;     ((loop-1
-;;       (lambda (i j)
-;; 	(when (< i 1)
-;; 	  (loop-2 i j)
-;; 	  (loop-1 (+ i 0.05) j))))
-;;      (loop-2
-;;       (lambda (i j)
-;; 	(when (< j 1)
-;; 	  (display (format "F(~1,2f, ~1,2f) = ~1,2f`\n" i j (f (list i j))))
-;; 	  (loop-2 i (+ j 0.05))))))
-;;   (loop-1 0 0))

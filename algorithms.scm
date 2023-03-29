@@ -1,5 +1,16 @@
+(define opt/pi
+  (* 4 (atan 1)))
+
+
 (define (opt/norm2 x)
   (sqrt (apply + (map (lambda (xi) (expt xi 2)) x))))
+
+
+(define (opt/box-muller-transform mu sigma u1 u2)
+  (let ((magnitude (* sigma (sqrt (* -2 (log u1))))))
+    (list
+     (+ (* magnitude (cos (* 2 opt/pi u2))) mu)
+     (+ (* magnitude (sin (* 2 opt/pi u2))) mu))))
 
 
 (define (opt/make-rng-uniform seed)
@@ -11,6 +22,16 @@
       (begin
 	(set! x (mod (+ (* a x) c) m))
 	(inexact (/ x m))))))
+
+
+(define (opt/make-rng-normal seed mu sigma)
+  (let ((rng (opt/make-rng-uniform seed)) (z '()))
+    (lambda ()
+      (begin
+	(when (null? z)
+	  (set! z (opt/box-muller-transform mu sigma (rng) (rng))))
+	(let ((z0 (car z)) (z1 (cdr z)))
+	  (begin (set! z z1) z0))))))
 
 
 (define (opt/bounded-uniform-convolution rng v p v-min v-max)
