@@ -1,3 +1,5 @@
+(load "sflow/sflow.scm")
+
 (define mini/pi
   (* 4 (atan 1)))
 
@@ -61,6 +63,30 @@
 
 (define (mini/solution->quality x)
   (vector-ref x 1))
+
+
+(define (mini/steepest-ascent-hill-climbing solution tweak objective n)
+  (define (candidate S)
+    (mini/solution S (objective S)))
+  (define (candidate-tweak S)
+    (candidate (tweak (mini/solution->data S))))
+  (define S
+    (candidate solution))
+  (define (sample-gradient S R iterations)
+    (if (> iterations 0)
+	(let* ((W (candidate-tweak S)))
+	  (if (> (mini/solution->quality W) (mini/solution->quality R))
+	      (sample-gradient S W (- iterations 1))
+	      (sample-gradient S R (- iterations 1))))
+	R))
+  (define (optimization-step)
+    (let* ((R (candidate-tweak S))
+	   (R* (sample-gradient S R n)))
+      (when (> (mini/solution->quality R*) (mini/solution->quality S))
+	(set! S R*)
+	S)))
+  (sflow/make-stream optimization))
+
 
 
 (define (mini/steepest-ascent-hill-climbing S tweak objective stop-criteria logger max-iterations n)
