@@ -23,37 +23,39 @@
 
 
 ;; maybe do high % to mutate, low % it per gene
-(define (non-uniform-mutation rng x)
-  (map (lambda (xi) (+ xi (rng))) x))
+;; done
+(define (non-uniform-mutation uniform-rng rng x)
+  (let ((mutate-chance 0.66)
+	(mutate-gene-chance 0.33))
+    (if (< (uniform-rng) mutate-chance)
+	(map
+	 (lambda (xi)
+	   (if (< (uniform-rng) mutate-gene-chance)
+	       (+ xi (rng))
+	       xi))
+	 x)
+	x)))
 
 
 ;; add elitism (survive best parent/child keep best)
-;; add crossover probability (allow clonning)
-;; tournament per parent
+;; add crossover probability (allow clonning) ;; done
+;; tournament per parent ;; done
 (define (mini/tournament rng population k)
   (let* ((N (length population))
 	 (samples
 	  (sflow/make-stream
 	   (lambda ()
 	     (list-ref population (inexact->exact (round (* (rng) (- N 1)))))))))
-    (map
-     mini/solution->data
+    (mini/solution->data
      (sflow/foldl
       '()
-      (lambda (parents individual)
-	(if (null? parents)
-	    (cons individual '())
-	    (let ((x0 (car parents))
-		  (x1 (cdr parents)))
-	      (if (null? x1)
-		  (if (> (mini/solution->quality individual) (mini/solution->quality x0))
-		      (list individual x0)
-		      (list x0 individual))
-		  (if (> (mini/solution->quality individual) (mini/solution->quality x0))
-		      (list individual x0)
-		      (if (> (mini/solution->quality individual) (mini/solution->quality (car x1)))
-			  (list x0 individual)
-			  parents))))))
+      (lambda (best-individual individual)
+	(if (null? best-individual)
+	    individual
+	    (if (< (mini/solution->quality individual)
+		   (mini/solution->quality best-individual))
+		individual
+		best-individual)))
       (sflow/take k samples)))))
 
 
@@ -72,26 +74,56 @@
     (sflow/stream->list
      (sflow/take population-size
 		 (sflow/make-stream sample-candidate))))
+  (define best-individual (car population))
+  (define (find-best)
+    (sflow/foldl
+     best-individual
+     (lambda (best individual)
+       (if (> (mini/solution->quality individual)
+	      (mini/solution->quality best))
+	   individual
+	   best))
+     (apply sflow/list->stream population)))
+  (define (find-worst)
+    (sflow/foldl
+     best-individual
+     (lambda (worst individual)
+       (if (< (mini/solution->quality individual)
+	      (mini/solution->quality best))
+	   individual
+	   worst))
+     (apply sflow/list->stream population)))
   (define (optimization-step)
     (define parents
       (sflow/make-stream
        (lambda ()
-	 (mini/tournament uniform-rng population 10))))
+	 (list (mini/tournament uniform-rng population 5)
+	       (mini/tournament uniform-rng population 5)))))
     (define children
       (sflow/map
        (lambda (xs)
-	 (mini/blend-crossover uniform-rng 0.5 (car xs) (car (cdr xs)))) parents))
+	 (mini/blend-crossover uniform-rng 0.5 (car xs) (car (cdr xs))))
+       parents))
     (define evaluated-children
       (sflow/map
        (lambda (x)
-	 (candidate (non-uniform-mutation rng x)))
+	 (candidate (non-uniform-mutation uniform-rng rng x)))
        children))
+
+    (set! best-individual (find-best))
     (set! population
 	  (sflow/stream->list
 	   (sflow/take population-size evaluated-children)))
-    (sflow/foldl
-     (mini/solution '() -inf.0)
-     (lambda (x y)
-       (if (> (mini/solution->quality x) (mini/solution->quality y)) x y))
-     (apply sflow/list->stream population)))
+
+    ;; elitism
+    (let ((new-best-individual (find-best)))
+      (if (> (mini/solution->quality best-individual)
+	     (mini/solution->quality new-best-individual))
+	  (let ((worst (find-worst)))
+	    (set! population (map (lambda (x) (if (eq? x worst) best-individual x)) population))
+	    best-individual)
+	  (begin
+	    (set! best-individual new-best-individual)
+	    best-individual))))
+
   (sflow/make-stream optimization-step))
