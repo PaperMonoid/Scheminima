@@ -22,10 +22,14 @@
 ;;   (mini/bounded-uniform-convolution rng x 1.0 -5.0 5.0))
 
 
+;; maybe do high % to mutate, low % it per gene
 (define (non-uniform-mutation rng x)
   (map (lambda (xi) (+ xi (rng))) x))
 
 
+;; add elitism (survive best parent/child keep best)
+;; add crossover probability (allow clonning)
+;; tournament per parent
 (define (mini/tournament rng population k)
   (let* ((N (length population))
 	 (samples
@@ -56,8 +60,7 @@
 (define (mini/blend-crossover rng alpha x y)
   (let* ((u (rng))
 	 (gamma (- (* (- 1 (* 2 alpha)) u) alpha)))
-    (map (lambda (xi) (min (max xi -5) 5))
-	 (map (lambda (xi yi) (+ (* (- 1 gamma) xi) (* gamma yi))) x y))))
+    (map (lambda (xi yi) (+ (* (- 1 gamma) xi) (* gamma yi))) x y)))
 
 
 (define (mini/genetic-algorithm sample fitness population-size uniform-rng rng)

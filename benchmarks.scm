@@ -83,39 +83,3 @@
 	       (apply + (map (lambda (zi) (expt zi 2)) z))
 	       (* 100 (mini/fpen x))))))
     (+ (f z) (f x*))))
-
-
-(define (mini/linear-slope-function x x*)
-  (let* ((D (length x))
-	 (I (mini/range 1 (+ D 1)))
-	 (s (map (lambda (xi* i) (* (mini/sign xi*) (expt 10 (/ (- i 1) (- D 1))))) x I))
-	 (z (map (lambda (xi xi*) (if (< (* xi* xi) (expt 5 2)) xi xi*)) x x*))
-	 (f (lambda (x) (apply + (map (lambda (zi si) (- (* 5 (abs si)) (* si zi))) z s)))))
-    (+ (f z) (f x*))))
-
-
-(define (mini/different-powers-function x x*)
-  (let* ((D (length x))
-	 (I (mini/range 1 (+ D 1)))
-	 (z (map (lambda (xi xi*) (- xi xi*)) x x*))
-	 (f (lambda (x) (sqrt (apply + (map (lambda (zi) (expt (abs zi) (+ 2 (* 4 (/ (- i 1) (- D 1)))))) z I))))))
-    (+ (f z) (f x*))))
-
-
-;; (define (sphere-function x x*)
-;;   (letrec
-;;       ((loop
-;; 	(lambda (value x x*)
-;; 	  (if (not (null? x))
-;; 	      (let* ((xn (car x))
-;; 		     (xn* (car x*))
-;; 		     (zn (- xn xn*)))
-;; 		(loop (+ value (expt zn 2) (expt xn* 2)) (cdr x) (cdr x*)))
-;; 	      value))))
-;;     (loop 0 x x*)))
-
-;; (define (f x) (sphere-function x '(0 0.25)))
-;; (f '(0 0.25))
-
-;; (define (f x) (linear-slope-function x '(-5 5)))
-;; (f '(-5 5))
